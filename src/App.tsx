@@ -1,5 +1,4 @@
 import React from "react";
-import HelloWorld from "components/HelloWorld";
 import StreamReceiver from "components/StreamReceiver";
 import TaskSpoolerQueue from './components/TaskSpoolerQueue';
 
@@ -9,7 +8,6 @@ const TSP_URL = new URL("stream_output", BASE_URL);
 
 const App: React.FC = () => (
     <div>
-        <HelloWorld />
         <TaskSpoolerQueue baseUrl={BASE_URL} />
         <StreamReceiver url={TICKER_URL} />
         <StreamReceiver url={TSP_URL} />

@@ -13,8 +13,8 @@ from tsp_manager import TaskSpooler
 from sse_message_handling import format_message_sse
 
 app = flask.Flask(__name__)
-#cors = CORS(app, resources={r"/*": {"origins": "*"}})
-cors = CORS(app)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
+#cors = CORS(app)
 
 announcer = MessageAnnouncer()
 
