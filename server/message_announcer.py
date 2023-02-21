@@ -17,8 +17,8 @@ class MessageAnnouncer:
     def announce(self, msg):
         for i in reversed(range(len(self.listeners))):
             try:
-                print(f"sending msg of len {len(msg)} to listener {i}")
+                #print(f"sending msg of len {len(msg)} to listener {i}")
                 self.listeners[i].put_nowait(msg)
             except queue.Full:
-                print(f"queue full, deleting listener {i}")
+                #print(f"queue full, deleting listener {i}")
                 del self.listeners[i]
