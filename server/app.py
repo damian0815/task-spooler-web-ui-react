@@ -5,7 +5,7 @@ import threading
 import time
 
 import flask
-from flask import Response
+from flask import Response, request
 from flask_cors import CORS, cross_origin
 
 from message_announcer import MessageAnnouncer
@@ -39,6 +39,7 @@ def connect(server, port, username, password):
     ssh.connect(server, port=port, username=username, password=password)
     return ssh
 
+ssh = connect(server, port, username, password)
 
 
 @app.route('/')
@@ -67,16 +68,24 @@ def listen():
 
 @app.route('/queue', methods=['GET'])
 def queue():
-    ssh = connect(server, port, username, password)
     tsp = TaskSpooler(ssh, ts_cmd)
     tasks = tsp.queue
     return Response(json.dumps([t.__dict__ for t in tasks]), mimetype='application/json')
 
+@app.route('/execute_tsp_subcommand', methods=['GET'])
+def execute_tsp_subcommaned():
+    subcommand = request.args.get('cmd', None)
+    if subcommand is None:
+        return Response('{"error": "missing cmd"}', mimetype='application/json', status=400)
+
+    tsp = TaskSpooler(ssh, tsp_command=ts_cmd)
+    stdout, stderr = tsp.execute_tsp(subcommand)
+    return {"stdout": stdout, "stderr": stderr}
+
 
 @app.route('/stream_output', methods=['GET'])
 def stream_output():
-    ssh_connection = connect(server, port, username, password)
-    stdin, stdout, stderr = ssh_connection.exec_command(f"{ts_cmd} -t", get_pty=True)
+    stdin, stdout, stderr = ssh.exec_command(f"{ts_cmd} -t", get_pty=True)
 
     print("streaming..")
 
@@ -92,7 +101,6 @@ def stream_output():
         print(f"stderr: ", stderr.readlines())
 
         print("done streaming")
-        ssh_connection.close()
 
     return Response(generate(), mimetype='text/event-stream')
 

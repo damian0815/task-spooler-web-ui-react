@@ -48,10 +48,13 @@ class TaskSpooler:
     @property
     def queue(self) -> [Task]:
         lines = self.execute_tsp("-l")[1:]
+        print(lines)
+
         tasks = [parse_task_str(l) for l in lines]
         return tasks
 
-    def execute_tsp(self, args: str) -> list[str]:
+    def execute_tsp(self, args: str) -> tuple[list[str], list[str]]:
+        print("executing", args)
         stdin, stdout, stderr = self.ssh.exec_command(f"{self.tsp_command} {args}")
-        return stdout.readlines()
+        return stdout.readlines(), stderr.readlines()
 
