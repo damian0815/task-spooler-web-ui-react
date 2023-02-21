@@ -1,4 +1,5 @@
 # adapted from https://maxhalford.github.io/blog/flask-sse-no-deps/
+import json
 import os
 import threading
 import time
@@ -8,6 +9,7 @@ from flask import Response
 from flask_cors import CORS, cross_origin
 
 from message_announcer import MessageAnnouncer
+from tsp_manager import TaskSpooler
 from sse_message_handling import format_message_sse
 
 app = flask.Flask(__name__)
@@ -35,7 +37,6 @@ def connect(server, port, username, password):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(server, port=port, username=username, password=password)
-    chan = ssh.invoke_shell()
     return ssh
 
 
@@ -63,6 +64,13 @@ def listen():
     print("listening..")
     return flask.Response(stream(), mimetype='text/event-stream')
 
+
+@app.route('/queue', methods=['GET'])
+def queue():
+    ssh = connect(server, port, username, password)
+    tsp = TaskSpooler(ssh, ts_cmd)
+    tasks = tsp.queue
+    return Response(json.dumps([t.__dict__ for t in tasks]), mimetype='application/json')
 
 
 @app.route('/stream_output', methods=['GET'])
