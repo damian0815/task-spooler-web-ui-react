@@ -41,7 +41,7 @@ def start_ticker():
     def run_ticker():
         run_seconds = 0
         while True:
-            announcer.announce(f'ticker has been running for {run_seconds} seconds')
+            announcer.announce(format_message_sse(f'ticker has been running for {run_seconds} seconds'))
             time.sleep(1)
             run_seconds += 1
 
