@@ -24,7 +24,7 @@ function TaskSpoolerQueue(props: TaskSpoolerQueueProps) {
         const index = tasks.findIndex((t) => t.id===taskId);
         console.log("moveUp found index", index, "for taskId", taskId);
         if (index > 0) {
-            const prevTaskId = tasks[index+1].id;
+            const prevTaskId = tasks[index-1].id;
             const result = await props.taskSpoolerInterface.swapQueuePosition(taskId, prevTaskId);  
             setTasks(result)
         }
@@ -54,11 +54,17 @@ function TaskSpoolerQueue(props: TaskSpoolerQueueProps) {
                 </tr>
             </thead>
             <tbody>
-                {tasks.map(task => (
+                {tasks.map((task, index) => (
                     <tr key={task.id} >
                         <td>
-                            <button onClick={()=>moveUp(task.id)}>ꜛ</button>
-                            <button onClick={()=>moveDown(task.id)}>ꜜ</button>
+                            
+                            <button onClick={()=>moveUp(task.id)}
+                                    disabled={!(task.state === 'queued' && (index>1 || tasks[0].state !== 'running'))}
+                                >🔼</button>
+
+                            <button onClick={()=>moveDown(task.id)}
+                                    disabled={!(task.state === 'queued' && index<tasks.length-1)}
+                                >🔽</button>
                         </td>
                         <TaskTableRowCells task={task} />
                     </tr>
