@@ -22,19 +22,22 @@ function TaskSpoolerQueue(props: TaskSpoolerQueueProps) {
 
     async function moveUp(taskId: number) {
         const index = tasks.findIndex((t) => t.id===taskId);
+        console.log("moveUp found index", index, "for taskId", taskId);
         if (index > 0) {
             const prevTaskId = tasks[index+1].id;
             const result = await props.taskSpoolerInterface.swapQueuePosition(taskId, prevTaskId);  
-            console.log("moveUp result: ", result)
+            setTasks(result)
         }
     }
 
     async function moveDown(taskId: number) {
         const index = tasks.findIndex((t) => t.id===taskId);
-        if (index < tasks.length-2) {
+        console.log("moveDown found index", index, "for taskId", taskId);
+        if (index < tasks.length-1) {
             const nextTaskId = tasks[index+1].id;
-            const result = props.taskSpoolerInterface.swapQueuePosition(taskId, nextTaskId);  
-            console.log("moveDown result: ", result)
+            const result = await props.taskSpoolerInterface.swapQueuePosition(taskId, nextTaskId);
+            console.log("moveDown:", result)  
+            setTasks(result)
         }
     }
 
@@ -53,10 +56,10 @@ function TaskSpoolerQueue(props: TaskSpoolerQueueProps) {
             <tbody>
                 {tasks.map(task => (
                     <tr key={task.id} >
-                        <span>
+                        <td>
                             <button onClick={()=>moveUp(task.id)}>ꜛ</button>
                             <button onClick={()=>moveDown(task.id)}>ꜜ</button>
-                        </span>
+                        </td>
                         <TaskTableRowCells task={task} />
                     </tr>
                 ))}

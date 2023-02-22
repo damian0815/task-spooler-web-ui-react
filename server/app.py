@@ -75,12 +75,13 @@ def queue():
 @app.route('/execute_tsp_subcommand', methods=['GET'])
 def execute_tsp_subcommaned():
     subcommand = request.args.get('cmd', None)
+    refresh_queue = request.args.get('refresh_queue', False)
     if subcommand is None:
         return Response('{"error": "missing cmd"}', mimetype='application/json', status=400)
 
     tsp = TaskSpooler(ssh, tsp_command=ts_cmd)
-    stdout, stderr = tsp.execute_tsp(subcommand)
-    return {"stdout": stdout, "stderr": stderr}
+    result = tsp.execute_tsp(subcommand, refresh_queue=refresh_queue)
+    return result
 
 
 @app.route('/stream_output', methods=['GET'])

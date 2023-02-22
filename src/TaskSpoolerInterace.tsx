@@ -25,6 +25,7 @@ export class TaskSpoolerInterface {
     swapQueuePosition(idA: number, idB: number) {
         const execUrl = new URL('execute_tsp_subcommand', this.baseUrl);
         execUrl.searchParams.set("cmd", "-U " + idA + "-" + idB);
+        execUrl.searchParams.set("refresh_queue", "true");
         return fetch(execUrl)
         .then((response) => response.json())
         .then((responseJson) => {

@@ -11,8 +11,8 @@ const TSP_URL = new URL("stream_output", BASE_URL);
 const App: React.FC = () => (
     <div>
         <TaskSpoolerQueue taskSpoolerInterface={taskSpoolerInterface} />
-        <StreamReceiver url={TICKER_URL} />
-        <StreamReceiver url={TSP_URL} />
+        {/*<StreamReceiver url={TICKER_URL} />
+        <StreamReceiver url={TSP_URL} />*/}
     </div>
 );
 
