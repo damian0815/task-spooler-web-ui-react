@@ -81,12 +81,22 @@ def execute_tsp_subcommaned():
 
     tsp = TaskSpooler(ssh, tsp_command=ts_cmd)
     result = tsp.execute_tsp(subcommand, refresh_queue=refresh_queue)
-    return result
+    result_json = {
+        'stdout': result[0],
+    }
+    if result[1] is not None:
+        result_json['tasks'] = result[1]
+    return result_json
 
 
 @app.route('/stream_output', methods=['GET'])
 def stream_output():
-    stdin, stdout, stderr = ssh.exec_command(f"{ts_cmd} -t", get_pty=True)
+    task_id = request.args.get('taskId', None)
+    subcommand = "-c" if request.args.get('fetchFullOutput', '0') == '1' else "-t"
+    if task_id is None:
+        return Response('{"error": "missing taskId"}', mimetype='application/json', status=400)
+
+    stdin, stdout, stderr = ssh.exec_command(f"{ts_cmd} {subcommand} {task_id}", get_pty=True)
 
     print("streaming..")
 

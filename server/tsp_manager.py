@@ -1,5 +1,7 @@
 import re
+import uuid
 from dataclasses import dataclass
+from typing import Optional
 
 import paramiko
 
@@ -13,7 +15,7 @@ class Task:
     command: str
 
 def parse_task_str(task_line: str) -> Task:
-    print(f"parsing line for task: {task_line}")
+    #print(f"parsing line for task: {task_line}")
     # 2    running    /tmp/ts-out.XW3gF0                         ls
     # 0    finished   /tmp/ts-out.nrRouK -1       0.00/0.00/0.00 ls
     finished_task_split = re.split("^(\d+) +(\S+) +(\S+) +(-?\d+) +(\d+\.\d+/\d+\.\d+/\d+\.\d+) +(.*)$", task_line)
@@ -48,17 +50,27 @@ class TaskSpooler:
 
     @property
     def queue(self) -> [Task]:
-        lines = self.execute_tsp("-l")[1:]
-        tasks = [parse_task_str(l) for l in lines]
+        lines, _ = self.execute_tsp("-l")
+        #print("queue got lines", lines)
+        tasks = [parse_task_str(l) for l in lines[1:]]
         return tasks
 
-    def execute_tsp(self, args: str, refresh_queue: bool=False) -> list[str] | list[Task]:
+    def execute_tsp(self, args: str, refresh_queue: bool=False) -> tuple[list[str], Optional[list[Task]]]:
         #print("executing", args)
-        suffix = "" if not refresh_queue else f"; {self.tsp_command} -l"
-        stdin, stdout, stderr = self.ssh.exec_command(f"{self.tsp_command} {args} {suffix}")
+        full_command_string = f"{self.tsp_command} {args}"
+        marker_uuid = None
+        if refresh_queue:
+            marker_uuid = uuid.uuid4()
+            full_command_string += f"; echo {marker_uuid}; {self.tsp_command} -l"
+        #print(f"executing '{full_command_string}'")
+        stdin, stdout, stderr = self.ssh.exec_command(full_command_string)
         lines = stdout.readlines()
         if refresh_queue:
-            return [parse_task_str(l) for l in lines[1:]]
+            #print(f"looking for {str(marker_uuid)} in {lines}...")
+            marker_line_index = next((i for (i, l) in enumerate(lines) if l.strip() == str(marker_uuid)), None)
+            stdout_lines = lines[:marker_line_index]
+            tasks = [parse_task_str(l) for l in lines[marker_line_index+2:]]
+            return stdout_lines, tasks
         else:
-            return lines
+            return (lines, None)
 
