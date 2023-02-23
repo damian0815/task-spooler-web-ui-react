@@ -1,12 +1,11 @@
 # adapted from https://maxhalford.github.io/blog/flask-sse-no-deps/
 import json
-import os
 import threading
 import time
 
 import flask
 from flask import Response, request
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 
 from message_announcer import MessageAnnouncer
 from tsp_manager import TaskSpooler
@@ -14,32 +13,10 @@ from sse_message_handling import format_message_sse
 
 app = flask.Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
-#cors = CORS(app)
 
 announcer = MessageAnnouncer()
 
-#server = os.environ['TSPW_SSH_SERVER']
-#port = int(os.environ['TSPW_SSH_PORT'])
-#username = os.environ['TSPW_SSH_USER']
-#password = os.environ['TSPW_SSH_PASS']
-server = "localhost"
-port = 22
-username = None
-password = None
-
 ts_cmd = "/opt/homebrew/bin/ts"
-
-import paramiko as paramiko
-
-
-def connect(server, port, username, password):
-    # Set up global SSH client
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(server, port=port, username=username, password=password)
-    return ssh
-
-ssh = connect(server, port, username, password)
 
 
 @app.route('/')
@@ -68,18 +45,19 @@ def listen():
 
 @app.route('/queue', methods=['GET'])
 def queue():
-    tsp = TaskSpooler(ssh, ts_cmd)
+    tsp = TaskSpooler(ts_cmd)
     tasks = tsp.queue
     return Response(json.dumps([t.__dict__ for t in tasks]), mimetype='application/json')
 
 @app.route('/execute_tsp_subcommand', methods=['GET'])
-def execute_tsp_subcommaned():
+def execute_tsp_subcommand():
+
     subcommand = request.args.get('cmd', None)
     refresh_queue = request.args.get('refresh_queue', False)
     if subcommand is None:
         return Response('{"error": "missing cmd"}', mimetype='application/json', status=400)
 
-    tsp = TaskSpooler(ssh, tsp_command=ts_cmd)
+    tsp = TaskSpooler(tsp_command=ts_cmd)
     result = tsp.execute_tsp(subcommand, refresh_queue=refresh_queue)
     result_json = {
         'stdout': result[0],
@@ -93,25 +71,20 @@ def execute_tsp_subcommaned():
 def stream_output():
     task_id = request.args.get('taskId', None)
     subcommand = "-c" if request.args.get('fetchFullOutput', '0') == '1' else "-t"
+    stopMarker = request.args.get('stopMarker', None)
     if task_id is None:
         return Response('{"error": "missing taskId"}', mimetype='application/json', status=400)
 
-    stdin, stdout, stderr = ssh.exec_command(f"{ts_cmd} {subcommand} {task_id}", get_pty=True)
-
+    tsp = TaskSpooler(tsp_command=ts_cmd)
+    stdout_lineses = tsp.stream_tsp(f"{subcommand} {task_id}")
     print("streaming..")
-
     def generate():
-        print(f"stdout.channel.exit_status_ready(): {stdout.channel.exit_status_ready()}")
-        while not stdout.channel.exit_status_ready():
-            line = stdout.readline()
-            if line:
-                yield format_message_sse(line)
-            else:
-                time.sleep(0.1)
-        print(f"ssh process exited with status {stdout.channel.exit_status}")
-        print(f"stderr: ", stderr.readlines())
-
-        print("done streaming")
+        for lines in stdout_lineses:
+            formatted = format_message_sse("".join(lines))
+            #print("-> yielding", formatted)
+            yield formatted
+        if stopMarker is not None:
+            yield format_message_sse(stopMarker)
 
     return Response(generate(), mimetype='text/event-stream')
 

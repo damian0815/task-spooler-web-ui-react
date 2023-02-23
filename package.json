@@ -40,8 +40,10 @@
         "webpack-dev-server": "4.11.1"
     },
     "dependencies": {
+        "buffer": "^6.0.3",
         "react": "^18.0.0",
         "react-dom": "^18.0.0",
-        "react-editext": "^5.1.0"
+        "react-editext": "^5.1.0",
+        "uuid": "^9.0.0"
     }
 }

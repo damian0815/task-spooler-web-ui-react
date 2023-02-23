@@ -33,10 +33,13 @@ export class TaskSpoolerInterface {
         });
     }
 
-    getListenUrlForTask(taskId: number) : URL {
+    getListenUrlForTask(taskId: number, stopMarker: string|undefined) : URL {
         const url = new URL('stream_output', this.baseUrl)
         url.searchParams.set('taskId', "" + taskId)
         url.searchParams.set('fetchFullOutput', "1"); 
+        if (stopMarker) {
+            url.searchParams.set('stopMarker', stopMarker);
+        }
         return url;
     }
 

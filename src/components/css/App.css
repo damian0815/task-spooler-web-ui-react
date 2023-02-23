@@ -56,8 +56,15 @@ form.addTask > input[type=submit] {
 }
 
 
+.streamReceiverContainer {
+    display: flex;
+    flex-direction: column;
+}
+
 .streamReceiverOutput {
     width: 100%;
-    height: 1000px;
+    height: 100px;
+    background-color: gray;
+    color: lightgreen;
     overflow-y: auto;
 }
